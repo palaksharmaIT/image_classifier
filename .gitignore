@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/media/
+staticfiles/
+
+# Environment variables / secrets
+.env
+
+# Keras/TensorFlow model cache (downloaded automatically, no need to track)
+*.h5
+*.keras
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

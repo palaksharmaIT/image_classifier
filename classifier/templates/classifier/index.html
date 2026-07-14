@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Classifier Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-border: #262a34;
+    --accent: #6c8cff;
+    --accent-soft: rgba(108, 140, 255, 0.15);
+    --text: #e7e9ee;
+    --text-dim: #9aa0ac;
+    --success: #4ade80;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px;
+  }
+  .wrap { width: 100%; max-width: 720px; }
+  header { text-align: center; margin-bottom: 32px; }
+  header h1 { font-size: 1.6rem; margin: 0 0 6px; }
+  header p { color: var(--text-dim); margin: 0; font-size: 0.95rem; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .dropzone {
+    border: 2px dashed var(--panel-border);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .dropzone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .dropzone svg { width: 36px; height: 36px; stroke: var(--text-dim); margin-bottom: 12px; }
+  .dropzone p { margin: 4px 0; }
+  .dropzone .main-text { color: var(--text); font-weight: 500; }
+  .dropzone .sub-text { color: var(--text-dim); font-size: 0.85rem; }
+  .dropzone input[type="file"] { display: none; }
+
+  .file-chip {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 14px;
+    font-size: 0.9rem;
+  }
+  .file-chip.visible { display: flex; }
+
+  .errors {
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid #f87171;
+    color: #fca5a5;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+
+  button.submit-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+  button.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.submit-btn:not(:disabled):hover { opacity: 0.9; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 560px) {
+    .results-grid { grid-template-columns: 1fr; }
+  }
+
+  .preview-img {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--panel-border);
+    display: block;
+  }
+
+  .prediction-list { list-style: none; margin: 0; padding: 0; }
+  .prediction-item { margin-bottom: 16px; }
+  .prediction-top-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.92rem;
+    margin-bottom: 6px;
+  }
+  .prediction-label { font-weight: 500; }
+  .prediction-confidence { color: var(--accent); font-weight: 600; }
+  .bar-track {
+    background: #232733;
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+  }
+  .rank-1 .prediction-confidence { color: var(--success); }
+
+  footer { text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Image Classification Dashboard</h1>
+    <p>Upload a photo and get the top&nbsp;3 predictions from MobileNetV2.</p>
+  </header>
+
+  {% if error_message %}
+    <div class="errors">{{ error_message }}</div>
+  {% endif %}
+  {% if form.image.errors %}
+    <div class="errors">{{ form.image.errors|striptags }}</div>
+  {% endif %}
+
+  <div class="panel">
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+      {% csrf_token %}
+      <label class="dropzone" id="dropzone" for="file-input">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16V4M12 4l-4 4M12 4l4 4"/>
+          <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+        </svg>
+        <p class="main-text">Drag &amp; drop an image, or click to browse</p>
+        <p class="sub-text">JPEG, PNG, or WEBP — up to 8&nbsp;MB</p>
+        {{ form.image }}
+      </label>
+      <div class="file-chip" id="file-chip">
+        <span id="file-name"></span>
+      </div>
+      <button type="submit" class="submit-btn" id="submit-btn" disabled>Classify Image</button>
+    </form>
+  </div>
+
+  {% if uploaded_image_url and predictions %}
+  <div class="panel">
+    <div class="results-grid">
+      <div>
+        <img class="preview-img" src="{{ uploaded_image_url }}" alt="Uploaded image">
+      </div>
+      <div>
+        <ul class="prediction-list">
+          {% for pred in predictions %}
+          <li class="prediction-item {% if forloop.first %}rank-1{% endif %}">
+            <div class="prediction-top-row">
+              <span class="prediction-label">{{ pred.label }}</span>
+              <span class="prediction-confidence">{{ pred.confidence }}%</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: {{ pred.confidence }}%;"></div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <footer>Powered by MobileNetV2 (ImageNet) &middot; Django media pipeline</footer>
+</div>
+
+<script>
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("file-input");
+  const fileChip = document.getElementById("file-chip");
+  const fileNameEl = document.getElementById("file-name");
+  const submitBtn = document.getElementById("submit-btn");
+
+  function handleFiles(files) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    fileNameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+    fileChip.classList.add("visible");
+    submitBtn.disabled = false;
+  }
+
+  fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+
+  ["dragenter", "dragover"].forEach((evt) => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+  });
+
+  ["dragleave", "drop"].forEach((evt) => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+    });
+  });
+
+  dropzone.addEventListener("drop", (e) => {
+    const files = e.dataTransfer.files;
+    fileInput.files = files;
+    handleFiles(files);
+  });
+
+  document.getElementById("upload-form").addEventListener("submit", () => {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Classifying...";
+  });
+</script>
+</body>
+</html>
