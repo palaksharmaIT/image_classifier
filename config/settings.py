@@ -15,6 +15,13 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
+RAILWAY_STATIC_URL = os.environ.get("RAILWAY_STATIC_URL")
+if RAILWAY_STATIC_URL:
+    ALLOWED_HOSTS.append(RAILWAY_STATIC_URL)
+
+# Fallback: allow all Railway subdomains
+ALLOWED_HOSTS.append(".up.railway.app")
+
 
 # Application definition
 
