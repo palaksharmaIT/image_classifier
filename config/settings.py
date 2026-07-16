@@ -22,6 +22,14 @@ if RAILWAY_STATIC_URL:
 # Fallback: allow all Railway subdomains
 ALLOWED_HOSTS.append(".up.railway.app")
 
+# NEW: CSRF trusted origins — fixes 403 Forbidden / CSRF errors behind Railway's HTTPS proxy
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.up.railway.app",
+]
+
+# NEW: tells Django to trust Railway's proxy header for detecting HTTPS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # Application definition
 
