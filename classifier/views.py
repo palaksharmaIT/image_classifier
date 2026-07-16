@@ -24,7 +24,6 @@ def index(request):
             try:
                 instance.predictions = classify_image(instance.image.path, top_k=3)
 
-                # Generate Grad-CAM heatmap and attach it to the instance.
                 heatmap_img = generate_gradcam_overlay(instance.image.path)
                 buffer = BytesIO()
                 heatmap_img.save(buffer, format="JPEG", quality=85)
