@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compare Images — Classifier Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08090d;
+    --bg-glow-1: #2e1f6b;
+    --bg-glow-2: #0d2c52;
+    --bg-glow-3: #4c1d5e;
+    --panel: rgba(22, 24, 33, 0.68);
+    --panel-border: rgba(255, 255, 255, 0.07);
+    --panel-border-hover: rgba(255, 255, 255, 0.14);
+    --accent: #7c8cff;
+    --accent-2: #b083ff;
+    --accent-soft: rgba(124, 140, 255, 0.13);
+    --text: #f3f4f8;
+    --text-dim: #939aab;
+    --text-faint: #676f82;
+    --success: #4ade80;
+    --danger: #f87171;
+    --radius-xl: 24px;
+    --radius-lg: 18px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--accent); color: white; }
+  body {
+    margin: 0;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 10% -15%, var(--bg-glow-1) 0%, transparent 42%),
+      radial-gradient(circle at 110% 10%, var(--bg-glow-2) 0%, transparent 40%),
+      radial-gradient(circle at 50% 120%, var(--bg-glow-3) 0%, transparent 45%),
+      var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 64px 20px 48px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; max-width: 920px; }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 24px;
+    transition: color 0.15s ease;
+  }
+  .back-link:hover { color: var(--text); }
+  .back-link svg { width: 15px; height: 15px; }
+
+  header { text-align: center; margin-bottom: 40px; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    background: var(--accent-soft);
+    border: 1px solid rgba(176, 131, 255, 0.28);
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+  header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 12px;
+    background: linear-gradient(135deg, #ffffff 10%, #c3c7ff 60%, #d8b4ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p { color: var(--text-dim); margin: 0; font-size: 1rem; max-width: 480px; margin: 0 auto; line-height: 1.5; }
+
+  .panel {
+    background: var(--panel);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-xl);
+    padding: 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+
+  .compare-col { display: flex; flex-direction: column; }
+  .compare-col.winner .panel-inner { border-color: rgba(74, 222, 128, 0.35); }
+
+  .panel-inner {
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    height: 100%;
+  }
+
+  .col-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .col-label span.name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .winner-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--success);
+    background: rgba(74, 222, 128, 0.14);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    padding: 3px 9px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .preview-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--panel-border);
+    display: block;
+    margin-bottom: 14px;
+  }
+
+  .heatmap-label {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    margin: 10px 0 7px;
+    font-weight: 500;
+  }
+
+  .top-call {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 14px 0 3px;
+  }
+  .top-confidence {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 600;
+    color: var(--accent-2);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+  .rank-1-glow .top-confidence { color: var(--success); }
+
+  .prediction-list { list-style: none; margin: 0; padding: 0; }
+  .prediction-item { margin-bottom: 14px; }
+  .prediction-item:last-child { margin-bottom: 0; }
+  .prediction-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  .prediction-label { font-weight: 600; }
+  .prediction-confidence { font-family: "JetBrains Mono", monospace; font-weight: 600; color: var(--accent-2); font-size: 0.8rem; }
+  .bar-track { background: rgba(255, 255, 255, 0.06); border-radius: 6px; height: 6px; overflow: hidden; }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  }
+
+  .verdict {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--panel-border);
+  }
+  .verdict strong { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="{% url 'index' %}" class="back-link">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to dashboard
+  </a>
+
+  <header>
+    <div class="eyebrow"><span>⇄</span> Side-by-side</div>
+    <h1>Comparing two classifications</h1>
+    <p>See how confident the model was for each image, and which prediction it trusted more.</p>
+  </header>
+
+  <div class="panel">
+    <div class="compare-grid">
+
+      <div class="compare-col {% if image_a.top_prediction.confidence >= image_b.top_prediction.confidence %}winner{% endif %}">
+        <div class="panel-inner">
+          <div class="col-label">
+            <span class="name">Image A</span>
+            {% if image_a.top_prediction.confidence >= image_b.top_prediction.confidence %}
+              <span class="winner-tag">More confident</span>
+            {% endif %}
+          </div>
+          <img class="preview-img" src="{{ image_a.image.url }}" alt="Image A">
+          {% if image_a.heatmap_image %}
+            <p class="heatmap-label">Grad-CAM — where the model looked</p>
+            <img class="preview-img" src="{{ image_a.heatmap_image.url }}" alt="Image A heatmap">
+          {% endif %}
+
+          {% if image_a.top_prediction %}
+          <p class="top-call">{{ image_a.top_prediction.label }}</p>
+          <p class="top-confidence">{{ image_a.top_prediction.confidence }}% confidence</p>
+          {% endif %}
+
+          <ul class="prediction-list">
+            {% for pred in image_a.predictions %}
+            <li class="prediction-item">
+              <div class="prediction-top-row">
+                <span class="prediction-label">{{ pred.label }}</span>
+                <span class="prediction-confidence">{{ pred.confidence }}%</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width: {{ pred.confidence }}%;"></div></div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="compare-col {% if image_b.top_prediction.confidence > image_a.top_prediction.confidence %}winner{% endif %}">
+        <div class="panel-inner">
+          <div class="col-label">
+            <span class="name">Image B</span>
+            {% if image_b.top_prediction.confidence > image_a.top_prediction.confidence %}
+              <span class="winner-tag">More confident</span>
+            {% endif %}
+          </div>
+          <img class="preview-img" src="{{ image_b.image.url }}" alt="Image B">
+          {% if image_b.heatmap_image %}
+            <p class="heatmap-label">Grad-CAM — where the model looked</p>
+            <img class="preview-img" src="{{ image_b.heatmap_image.url }}" alt="Image B heatmap">
+          {% endif %}
+
+          {% if image_b.top_prediction %}
+          <p class="top-call">{{ image_b.top_prediction.label }}</p>
+          <p class="top-confidence">{{ image_b.top_prediction.confidence }}% confidence</p>
+          {% endif %}
+
+          <ul class="prediction-list">
+            {% for pred in image_b.predictions %}
+            <li class="prediction-item">
+              <div class="prediction-top-row">
+                <span class="prediction-label">{{ pred.label }}</span>
+                <span class="prediction-confidence">{{ pred.confidence }}%</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width: {{ pred.confidence }}%;"></div></div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="verdict">
+      {% if image_a.top_prediction.label == image_b.top_prediction.label %}
+        Both images were classified as <strong>{{ image_a.top_prediction.label }}</strong> — same top prediction.
+      {% else %}
+        The model called Image A <strong>{{ image_a.top_prediction.label }}</strong> and Image B <strong>{{ image_b.top_prediction.label }}</strong> — different top predictions.
+      {% endif %}
+    </p>
+  </div>
+</div>
+</body>
+</html>

@@ -91,3 +91,21 @@ def delete_image(request, image_id):
         instance.heatmap_image.delete(save=False)
     instance.delete()
     return redirect(reverse("index"))
+
+
+
+
+def compare_images(request):
+    id_a = request.GET.get("a")
+    id_b = request.GET.get("b")
+
+    if not id_a or not id_b:
+        return redirect("index")
+
+    image_a = get_object_or_404(UploadedImage, id=id_a)
+    image_b = get_object_or_404(UploadedImage, id=id_b)
+
+    return render(request, "classifier/compare.html", {
+        "image_a": image_a,
+        "image_b": image_b,
+    })
